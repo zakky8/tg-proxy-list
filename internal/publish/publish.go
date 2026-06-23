@@ -150,6 +150,8 @@ func writeByCountry(dir string, sorted []model.Proxy) error {
 	return nil
 }
 
+// writeJSON writes v as indented JSON atomically (temp file + rename) so a reader
+// never observes a half-written, unparseable file.
 func writeJSON(path string, v any) error {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -158,5 +160,9 @@ func writeJSON(path string, v any) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(data, '\n'), 0o644)
+	tmp := path + ".tmp"
+	if err := os.WriteFile(tmp, append(data, '\n'), 0o644); err != nil {
+		return err
+	}
+	return os.Rename(tmp, path)
 }

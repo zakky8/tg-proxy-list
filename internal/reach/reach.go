@@ -123,19 +123,21 @@ func Check(ctx context.Context, targets []Target, opts Options) []Result {
 
 // startResponse is the JSON returned when a check is created.
 type startResponse struct {
-	OK        json.Number                `json:"ok"`
-	RequestID string                     `json:"request_id"`
-	Nodes     map[string][]string        `json:"nodes"` // node -> [cc, country, city, ip, asn]
-	Error     string                     `json:"error"`
-	Permanent string                     `json:"permanent_link"`
+	OK        json.Number         `json:"ok"`
+	RequestID string              `json:"request_id"`
+	Nodes     map[string][]string `json:"nodes"` // node -> [cc, country, city, ip, asn]
+	Error     string              `json:"error"`
+	Permanent string              `json:"permanent_link"`
 }
 
 func checkOne(ctx context.Context, opts Options, t Target, nodes []string) []string {
 	host := fmt.Sprintf("%s:%d", t.IP, t.Port)
 
-	// Start the check (retry once on rate-limit).
+	// Start the check (retry once on rate-limit). sr is declared per-attempt so a
+	// partial response can never carry fields over into the next attempt.
 	var sr startResponse
 	for attempt := 0; attempt < 2; attempt++ {
+		var attemptSR startResponse
 		q := url.Values{}
 		q.Set("host", host)
 		u := apiBase + "/check-tcp?" + q.Encode()
@@ -156,10 +158,11 @@ func checkOne(ctx context.Context, opts Options, t Target, nodes []string) []str
 			}
 			continue
 		}
-		if err := json.Unmarshal(body, &sr); err != nil || sr.RequestID == "" {
+		if err := json.Unmarshal(body, &attemptSR); err != nil || attemptSR.RequestID == "" {
 			opts.Log("reach: bad start response for %s", host)
 			return nil
 		}
+		sr = attemptSR
 		break
 	}
 	if sr.RequestID == "" {

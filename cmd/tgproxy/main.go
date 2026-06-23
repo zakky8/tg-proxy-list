@@ -28,14 +28,14 @@ import (
 
 func main() {
 	var (
-		sourcesPath = flag.String("sources", "sources.txt", "path to feed list")
-		outDir      = flag.String("out", ".", "directory for canonical output lists")
-		docsDir     = flag.String("docs", "docs", "directory for the website (gets proxies.json)")
-		geoPath     = flag.String("geo", "data/dbip-country-ipv4.csv", "path to IP->country CSV (downloaded if absent)")
-		statePath   = flag.String("state", ".state/history.json", "path to uptime history")
-		concurrency = flag.Int("concurrency", 150, "parallel verification workers")
-		timeout     = flag.Duration("timeout", 6*time.Second, "per-proxy verification timeout")
-		limit       = flag.Int("limit", 0, "cap candidates (0 = no cap; useful for quick local runs)")
+		sourcesPath  = flag.String("sources", "sources.txt", "path to feed list")
+		outDir       = flag.String("out", ".", "directory for canonical output lists")
+		docsDir      = flag.String("docs", "docs", "directory for the website (gets proxies.json)")
+		geoPath      = flag.String("geo", "data/dbip-country-ipv4.csv", "path to IP->country CSV (downloaded if absent)")
+		statePath    = flag.String("state", ".state/history.json", "path to uptime history")
+		concurrency  = flag.Int("concurrency", 150, "parallel verification workers")
+		timeout      = flag.Duration("timeout", 6*time.Second, "per-proxy verification timeout")
+		limit        = flag.Int("limit", 0, "cap candidates (0 = no cap; useful for quick local runs)")
 		minHandshake = flag.Bool("handshake-only", false, "publish only proxies that passed a protocol handshake")
 		reachOn      = flag.Bool("reach", false, "test top FakeTLS proxies for reachability from inside censored countries (check-host.net)")
 		reachSample  = flag.Int("reach-sample", 80, "how many top FakeTLS proxies to in-country test when --reach is set")

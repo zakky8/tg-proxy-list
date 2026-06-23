@@ -3,6 +3,7 @@ package model
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"sort"
 	"strconv"
@@ -12,8 +13,8 @@ import (
 // Secret type tags.
 const (
 	TypePlain = "plain" // 16-byte hex secret (legacy obfuscated)
-	TypeDD    = "dd"     // dd-prefixed, random-padded
-	TypeEE    = "ee"     // ee-prefixed, FakeTLS (embeds an SNI domain)
+	TypeDD    = "dd"    // dd-prefixed, random-padded
+	TypeEE    = "ee"    // ee-prefixed, FakeTLS (embeds an SNI domain)
 )
 
 // Verification statuses, ordered weakest to strongest.
@@ -111,10 +112,33 @@ func (p Proxy) Validate() error {
 	if p.Port <= 0 || p.Port > 65535 {
 		return fmt.Errorf("invalid port %d", p.Port)
 	}
+	if !validHost(p.Server) {
+		return fmt.Errorf("invalid server %q", p.Server)
+	}
 	if !validSecret(p.Secret) {
 		return fmt.Errorf("invalid secret %q", p.Secret)
 	}
 	return nil
+}
+
+// validHost accepts an IP literal or a hostname containing only DNS-safe
+// characters. It rejects anything with whitespace or HTML/URL metacharacters,
+// which is the only way junk from a poisoned source feed could otherwise reach
+// the published lists (and, via them, a consumer that fails to escape it).
+func validHost(s string) bool {
+	if net.ParseIP(s) != nil {
+		return true
+	}
+	if len(s) < 1 || len(s) > 253 {
+		return false
+	}
+	for _, c := range s {
+		if !(c == '.' || c == '-' || c == '_' ||
+			(c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+			return false
+		}
+	}
+	return true
 }
 
 func validSecret(s string) bool {

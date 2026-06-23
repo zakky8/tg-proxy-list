@@ -2,6 +2,7 @@ package publish
 
 import (
 	"encoding/json"
+	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -48,7 +49,7 @@ func (h History) Pct(key string) int {
 	if s.Seen == 0 {
 		return 0
 	}
-	return int(float64(s.OK) / float64(s.Seen) * 100.0)
+	return int(math.Round(float64(s.OK) / float64(s.Seen) * 100.0))
 }
 
 // Save writes the state file, pruning the least-recently/least-seen entries when

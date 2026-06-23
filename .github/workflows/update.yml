@@ -49,7 +49,7 @@ jobs:
 
       - name: Commit refreshed lists
         run: |
-          git config user.name  "tg-proxy-bot"
+          git config user.name  "mtproto-proxy-bot"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
@@ -57,5 +57,12 @@ jobs:
           else
             count="$(grep -c . all_proxies.txt || echo 0)"
             git commit -m "chore: refresh proxy list (${count} verified) [skip ci]"
-            git push
+            # The reach pass can take ~20 min; main may have advanced meanwhile.
+            # Rebase onto the latest and retry so a concurrent push doesn't fail the run.
+            for attempt in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push; then
+                echo "pushed on attempt ${attempt}"; break
+              fi
+              echo "push attempt ${attempt} rejected; refetching..."; sleep 5
+            done
           fi

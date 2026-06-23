@@ -1,4 +1,4 @@
 https://t.me/proxy?server=194.238.57.251&port=443&secret=780a60fef80f59cab46dbaca44d8da64
-https://t.me/proxy?server=tg-proxy-2.potokvpn.com&port=993&secret=dd080073892babef5b062caf40c39e8251
 https://t.me/proxy?server=telegram.darvpn-proxy.com&port=8443&secret=29939d92f8932c7bd60a9ad387ffcf8f
+https://t.me/proxy?server=tg-proxy-2.potokvpn.com&port=993&secret=dd080073892babef5b062caf40c39e8251
 https://t.me/proxy?server=tg-proxy-2.potokvpn.com&port=993&secret=080073892babef5b062caf40c39e8251

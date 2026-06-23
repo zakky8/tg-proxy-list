@@ -54,10 +54,12 @@
     return Math.round(h / 24) + "d ago";
   }
 
-  // tg:// scheme opens the Telegram app directly — more reliable on mobile than
-  // the https://t.me link, which some browsers render as a web page instead.
-  function tgHref(p) {
-    return `tg://proxy?server=${encodeURIComponent(p.server)}&port=${p.port}&secret=${encodeURIComponent(p.secret)}`;
+  // Telegram's universal https://t.me/proxy link: on mobile it hands off to the
+  // installed app, and on desktop it degrades to a web page instead of failing
+  // silently (or throwing an iOS "Cannot Open Page" dialog) like the tg:// scheme.
+  // Falls back to building the link if the engine didn't supply one.
+  function tmeHref(p) {
+    return p.link || `https://t.me/proxy?server=${encodeURIComponent(p.server)}&port=${p.port}&secret=${encodeURIComponent(p.secret)}`;
   }
 
   // Mirror of model.IsCensorshipResistant: proven reachable from a censored
@@ -73,10 +75,10 @@
   }
 
   function fillStats(data) {
-    $('[data-stat="count"]').textContent = data.count.toLocaleString();
+    $('[data-stat="count"]').textContent = (data.count ?? ALL.length).toLocaleString();
     const resistant = typeof data.censorship_resistant === "number"
       ? data.censorship_resistant
-      : data.proxies.filter(isResistant).length;
+      : ALL.filter(isResistant).length;
     $('[data-stat="resistant"]').textContent = resistant.toLocaleString();
     $('[data-stat="countries"]').textContent = Object.keys(data.countries || {}).filter((c) => c !== "??").length;
     const upd = $('[data-stat="updated"]');
@@ -110,17 +112,19 @@
       ? '<span class="status-tag">● handshake</span>'
       : '<span class="status-tag status-tag--reach">● reachable</span>';
     const tier = resilienceTier(p.resilience || 0);
+    const link = tmeHref(p);
+    const lat = typeof p.latency_ms === "number" ? p.latency_ms : null;
     return `<tr>
-      <td class="col-country" data-label="Country"><span class="td-country"><span class="flag" aria-hidden="true">${flag(p.country)}</span><span>${esc(name)}</span><span class="cc">${esc(p.country)}</span></span></td>
+      <td class="col-country" data-label="Country"><span class="td-country"><span class="flag" aria-hidden="true">${flag(p.country)}</span><span>${esc(name)}</span></span></td>
       <td class="col-server" data-label="Server"><span class="server">${esc(p.server)}<span class="port">:${p.port}</span></span><br>${statusLabel}${reachChips(p)}</td>
       <td class="col-type" data-label="Type"><span class="badge badge--${esc(p.type)}">${esc(typeLabel)}</span> <span class="badge res ${tier.cls}" title="Censorship-resistance score ${p.resilience || 0}/100">🛡 ${tier.label}</span></td>
-      <td class="col-num" data-label="Latency"><span class="lat ${latClass(p.latency_ms)}">${p.latency_ms} ms</span></td>
+      <td class="col-num" data-label="Latency"><span class="lat ${latClass(lat ?? 9999)}">${lat ?? "—"} ms</span></td>
       <td class="col-num" data-label="Uptime"><span class="uptime">${p.uptime_pct ?? 0}%</span></td>
       <td class="col-actions" data-label="Connect"><div class="actions">
-        <button class="btn btn--icon" type="button" data-copy="${esc(p.link)}" aria-label="Copy proxy link for ${esc(p.server)}" title="Copy link">
+        <button class="btn btn--icon" type="button" data-copy="${esc(link)}" aria-label="Copy proxy link for ${esc(p.server)}" title="Copy link">
           <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v10H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
         </button>
-        <a class="btn btn--go" href="${esc(tgHref(p))}" rel="noopener" aria-label="Connect to ${esc(p.server)} in Telegram">Connect</a>
+        <a class="btn btn--go" href="${esc(link)}" target="_blank" rel="noopener" aria-label="Connect to ${esc(p.server)} in Telegram">Connect</a>
       </div></td>
     </tr>`;
   }

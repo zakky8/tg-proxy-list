@@ -65,11 +65,11 @@ func Collect(ctx context.Context, urls []string) ([]model.Proxy, []Result) {
 	client := &http.Client{Timeout: 30 * time.Second}
 
 	var (
-		mu       sync.Mutex
-		all      []model.Proxy
-		results  = make([]Result, len(urls))
-		seen     = map[string]bool{}
-		wg       sync.WaitGroup
+		mu      sync.Mutex
+		all     []model.Proxy
+		results = make([]Result, len(urls))
+		seen    = map[string]bool{}
+		wg      sync.WaitGroup
 	)
 
 	for i, u := range urls {

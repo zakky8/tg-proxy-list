@@ -87,3 +87,19 @@ func TestValidate(t *testing.T) {
 		t.Fatal("empty server accepted")
 	}
 }
+
+func TestValidateRejectsJunkHost(t *testing.T) {
+	sec := "0123456789abcdef0123456789abcdef"
+	for _, host := range []string{`x"><img src=x onerror=alert(1)>`, "a b.com", "has space", "<script>"} {
+		p := Proxy{Server: host, Port: 443, Secret: sec}
+		if p.Validate() == nil {
+			t.Errorf("junk host accepted: %q", host)
+		}
+	}
+	for _, host := range []string{"1.2.3.4", "proxy.example.com", "a-b_c.telbet.lol"} {
+		p := Proxy{Server: host, Port: 443, Secret: sec}
+		if err := p.Validate(); err != nil {
+			t.Errorf("valid host rejected: %q (%v)", host, err)
+		}
+	}
+}

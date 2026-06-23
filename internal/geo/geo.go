@@ -83,8 +83,11 @@ func (db *DB) LookupIP(ip net.IP) string {
 		return unknown
 	}
 	n := uint32(v4[0])<<24 | uint32(v4[1])<<16 | uint32(v4[2])<<8 | uint32(v4[3])
-	i := sort.Search(len(db.ranges), func(i int) bool { return db.ranges[i].end >= n })
-	if i < len(db.ranges) && db.ranges[i].start <= n && n <= db.ranges[i].end {
+	// Find the last range whose start <= n, then range-check end. This relies only
+	// on ranges being sorted by start, so it stays correct even if a malformed
+	// dataset contains overlapping or nested ranges.
+	i := sort.Search(len(db.ranges), func(i int) bool { return db.ranges[i].start > n }) - 1
+	if i >= 0 && n <= db.ranges[i].end {
 		return db.ranges[i].cc
 	}
 	return unknown
