@@ -54,12 +54,17 @@
     return Math.round(h / 24) + "d ago";
   }
 
-  // Telegram's universal https://t.me/proxy link: on mobile it hands off to the
-  // installed app, and on desktop it degrades to a web page instead of failing
-  // silently (or throwing an iOS "Cannot Open Page" dialog) like the tg:// scheme.
-  // Falls back to building the link if the engine didn't supply one.
+  // Two link forms for the same proxy:
+  //  - tmeHref: https://t.me/proxy?... — the universal web link (shareable; used for Copy
+  //    and as the no-JS / no-app fallback).
+  //  - tgHref:  tg://proxy?...        — the app scheme that opens Telegram Desktop / the
+  //    mobile app directly. Connect tries this first (see the click handler) so it opens
+  //    the actual app instead of a web page on desktop.
   function tmeHref(p) {
     return p.link || `https://t.me/proxy?server=${encodeURIComponent(p.server)}&port=${p.port}&secret=${encodeURIComponent(p.secret)}`;
+  }
+  function tgHref(p) {
+    return `tg://proxy?server=${encodeURIComponent(p.server)}&port=${p.port}&secret=${encodeURIComponent(p.secret)}`;
   }
 
   // Mirror of model.IsCensorshipResistant: proven reachable from a censored
@@ -124,7 +129,7 @@
         <button class="btn btn--icon" type="button" data-copy="${esc(link)}" aria-label="Copy proxy link for ${esc(p.server)}" title="Copy link">
           <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 9h10v10H9zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg>
         </button>
-        <a class="btn btn--go" href="${esc(link)}" target="_blank" rel="noopener" aria-label="Connect to ${esc(p.server)} in Telegram">Connect</a>
+        <a class="btn btn--go" href="${esc(link)}" data-tg="${esc(tgHref(p))}" target="_blank" rel="noopener" aria-label="Connect to ${esc(p.server)} in Telegram">Connect</a>
       </div></td>
     </tr>`;
   }
@@ -202,6 +207,30 @@
       try { document.execCommand("copy"); showToast("Proxy link copied"); } catch { showToast("Copy failed — long-press to copy"); }
       ta.remove();
     }
+  });
+
+  // Connect: open the Telegram app directly via the tg:// scheme (opens Telegram Desktop
+  // or the mobile app with the "enable proxy?" prompt), and fall back to the t.me web link
+  // only if no installed app handles it. This avoids landing on the telegram.org web page
+  // on desktop, while still degrading gracefully when Telegram isn't installed.
+  rowsEl.addEventListener("click", (e) => {
+    const a = e.target.closest("a.btn--go");
+    if (!a || !a.dataset.tg) return;
+    e.preventDefault();
+    const web = a.getAttribute("href");
+    const app = a.dataset.tg;
+    let handled = false;
+    const cancel = () => { handled = true; };
+    // When Telegram opens, this window loses focus / becomes hidden — then skip the fallback.
+    window.addEventListener("blur", cancel, { once: true });
+    document.addEventListener("visibilitychange", function vc() {
+      if (document.hidden) { cancel(); document.removeEventListener("visibilitychange", vc); }
+    });
+    window.location.href = app; // try the Telegram app first
+    window.setTimeout(() => {    // fall back to the universal web link only if nothing handled it
+      if (!handled) window.location.href = web;
+    }, 2000);
+    showToast("Opening Telegram…");
   });
 
   searchEl.addEventListener("input", debounce(applyFilters, 120));
