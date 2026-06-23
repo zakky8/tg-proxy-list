@@ -1,0 +1,15 @@
+tg-proxy-list
+Copyright (c) 2026 zakky8
+Licensed under the MIT License (see LICENSE).
+
+Third-party data
+----------------
+Country / geo-location data is derived from the DB-IP IP-to-Country Lite
+database, redistributed via the public-domain project sapics/ip-location-db,
+and is licensed under the Creative Commons Attribution 4.0 International
+License (CC-BY-4.0): https://creativecommons.org/licenses/by/4.0/
+Attribution: https://db-ip.com
+
+The proxies listed by this project are public MTProto proxies aggregated from
+open sources. This project does not operate them and makes no warranty as to
+their availability, security, or performance.
